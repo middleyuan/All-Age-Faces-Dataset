@@ -1,38 +1,26 @@
-# All-Age-Faces Dataset
-![Alt Text](https://github.com/JingchunCheng/All-Age-Faces-Dataset/blob/master/illu_AAF.png) 
+# Goal
+Do age and gender prediction on pictures.
 
-Download link (baidu): https://pan.baidu.com/s/1WtHQsb73rLa-cZpBLi2dtg <br />
-Download link (dropbox): https://www.dropbox.com/s/a0lj1ddd54ns8qy/All-Age-Faces%20Dataset.zip?dl=0
+# Motivation
+Nowadays, I find few age and gender prediction models are trained on Asian dataset.
+It will cause a drop of accuracy when the targets we went to predict are Asian people.
+So, I would try to train a model based on dataset containing mostly Asian.
+Please refer the link to see the detail of the dataset: All-Age-Faces Dataset
+(https://github.com/JingchunCheng/All-Age-Faces-Dataset) 
 
-Contact: Jingchun Cheng (chengjingchun at gmail dot com)
+# Pre-process data for training
+You can preprocess All-Age-Faces Dataset by using datapreproc.py. Regarding the age, it will re-label the data to 
+8 intervals. That is, [0, 3], [4, 7], [8, 14], [15, 24], [25, 37], [38, 47], [48, 59], [60, -]. 
+Also, I split the data into training data (10137) and validation data (3185).
+Finally, datapreproc.py process the both age and gender data set and save them as TFRecord.
+You can check the TFRecord of age and TFRecord of gender in age directory and gender directory repectively.
 
+# Result
+Currently the best result I got.
+                 |  Age Model |  Gender Model
+-----------------|------------|--------------
+Accuracy         |  0.534     |  0.914
 
-The All-Age-Faces (AAF) Dataset contains 13'322 face images (mostly Asian) distributed across all ages (from 2 to 80), including 7381 females and 5941 males.
-
-The orignal face images, facial landmarks and aligned face images are stored in folder `original images`, `key points`, and `aligned faces`, respectively. 
-We show an example of landmark distribution in folder `example`.
-
-Each image contains a different individual, and is given a unique name (`%05dA%02d.jpg`), illustrating the individual’s serial number and specific age.
-Individuals from serial number 00000 to 07380 are all female, from 07381 to 13321 are male.
-
-This dataset can be used for age prediction and gender classification. 
-For fair comparison, we randomly split the images into two sets, one for trainning and the other for validation.
-The annotation files in folder `image sets` have the following format:
-`"%05dA%02d %d\n", person_id, age, gender,`
-where for gender, 0 stands for female and 1 stands for male.
-
-
-
-Please cite our [paper](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=8620951) if you find this dataset useful for your research.
-```
-@article{cheng2019exploiting,
-  title={Exploiting effective facial patches for robust gender recognition},
-  author={Cheng, Jingchun and Li, Yali and Wang, Jilong and Yu, Le and Wang, Shengjin},
-  journal={Tsinghua Science and Technology},
-  volume={24},
-  number={3},
-  pages={333--345},
-  year={2019},
-  publisher={TUP}
-}
-```
+# To-do list
+* Release pre-trained checkpoints.
+* Release predict module that can be used to predict age and gender of faces.
