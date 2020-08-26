@@ -16,10 +16,9 @@ Finally, datapreproc.py process the both age and gender data set and save them a
 You can check the TFRecord of age and TFRecord of gender in age directory and gender directory repectively.
 
 # Result
-Currently the best result I got.
-                 |  Age Model |  Gender Model
------------------|------------|--------------
-Accuracy         |  0.534     |  0.914
+              | Age Model  | Gender Model
+--------------|:----------:|--------------
+Accuracy      |   0.534    |    0.914
 
 # To-do list
 * Release pre-trained checkpoints.
