@@ -3,7 +3,7 @@ import numpy as np
 from dlibdetect import FaceDetectorDlib
 from tensorflow.contrib.layers import *
 import os
-import threading
+import itertools
 
 
 RESIZE_FINAL = 227
@@ -19,9 +19,22 @@ tf.app.flags.DEFINE_string('filename', './Data/photo3.jpg', 'File (Image) or Fil
 
 FLAGS = tf.app.flags.FLAGS
 
-# Read image files (reference from rude-carnie)            
+class Person(object):
+
+    gender_list = GENDER_LIST
+    age_list = AGE_LIST
+
+    def __init__(self, gender=0, age=0, second_best_age=0, ratio=0):
+        self.gender_index = gender
+        self.age_index = age
+        self.gender = self.gender_list[self.gender_index]
+        self.age = self.age_list[self.age_index]
+        self.second_best_age_index = second_best_age
+        self.second_best_age = self.age_list[self.second_best_age_index]
+        self.ratio = ratio
+
 class ImageCoder(object):
-    
+    """Reference from rude-carnie"""
     def __init__(self):
         # Create a single Session to run all image coding calls.
         config = tf.compat.v1.ConfigProto(allow_soft_placement=True)
@@ -198,6 +211,9 @@ def classify_one_multi_crop(sess, label_list, softmax_output, images, image_file
             second_best = np.argmax(output)
             print('Guess @ 2 %s, prob = %.2f' % (label_list[second_best], output[second_best]))
 
+            return best, second_best
+
+        return best
     except Exception as e:
         print(e)
         print('Failed to run image %s ' % image_file)
@@ -209,6 +225,10 @@ def main(argv=None):
 
     config = tf.compat.v1.ConfigProto(allow_soft_placement=True)
     coder = ImageCoder()
+    age_predictions, age_second_predictions = [], []
+    gender_predictions = []
+    ratios = detector.ratios
+    people = []
 
     # age prediction
     age_graph = tf.Graph()
@@ -233,7 +253,9 @@ def main(argv=None):
             image_files = list(filter(lambda x: x is not None, [find_files(f) for f in face_files]))
 
             for imagefile in image_files:
-                classify_one_multi_crop(sess, label_list, softmax_output, images, imagefile, coder)  
+                best, second = classify_one_multi_crop(sess, label_list, softmax_output, images, imagefile, coder)  
+                age_predictions.append(best)
+                age_second_predictions.append(second)
 
     # gender prediction
     gender_graph = tf.Graph()
@@ -256,7 +278,12 @@ def main(argv=None):
             softmax_output = tf.nn.softmax(logits)
 
             for imagefile in image_files:
-                classify_one_multi_crop(sess, label_list, softmax_output, images, imagefile, coder)        
+                best = classify_one_multi_crop(sess, label_list, softmax_output, images, imagefile, coder)      
+                gender_predictions.append(best)  
+
+    for (age_prediction, age_second_prediction, gender_prediction, ratio) in zip(age_predictions, age_second_predictions, gender_predictions, ratios):
+        person = Person(gender_prediction, age_prediction, age_second_prediction, ratio)
+        people.append(person)
 
 
 if __name__ == '__main__':
