@@ -1,7 +1,10 @@
 # Goal
-Do age and gender prediction on pictures.
+Robot-Assist Photo Reminiscence: 
+Try Computer Vision and Machine Learning techniques to extract features from photos.
+In our case, it's age and gender prediction.
+Afterwards, the question generation module will ask a specific questions lying in a certain category.
 
-# Motivation
+# Motivation (Why train the model on All-Age-Faces Dataset?)
 Nowadays, I find few age and gender prediction models are trained on Asian dataset.
 It will cause a drop of accuracy when the targets we went to predict are Asian people.
 So, I would try to train a model based on dataset containing mostly Asian.
@@ -20,6 +23,16 @@ You can check the TFRecord of age and TFRecord of gender in age directory and ge
 | ------------- | -------------|
 |     0.534     |    0.914     |
 
-# To-do list
-* Release pre-trained checkpoints.
-* Release predict module that can be used to predict age and gender of faces.
+# Program Flow Chart
+![image](https://https://github.com/middleyuan/All-Age-Faces-Dataset/blob/master/flow_chart.png)
+
+# Usage 
+Predict.py file will first detect the number of faces in the picture and predict each face's age and gender, and then ask a question based on the information it extracts from the photo.
+
+```
+$ python predict.py  --filename "./Data/photo2.jpg"
+
+Sample output: 
+```
+你覺得他對你做過最浪漫的事情是什麽呢？
+```
