@@ -29,6 +29,7 @@ You can check the TFRecord of age and TFRecord of gender in age directory and ge
 # Usage 
 Predict.py file will first detect the number of faces in the picture and predict each face's age and gender, and then ask a question based on the information it extracts from the photo.
 
+Feed the photo into predict.py through argument "filename".
 ```
 $ python predict.py  --filename "./Data/photo2.jpg"
 ```
