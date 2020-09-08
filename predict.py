@@ -4,6 +4,7 @@ from dlibdetect import FaceDetectorDlib
 from tensorflow.contrib.layers import *
 import os
 import itertools
+from question import Person, People, QuestionPosing
 
 
 RESIZE_FINAL = 227
@@ -18,20 +19,6 @@ tf.app.flags.DEFINE_string('device_id', '/cpu:0', 'What processing unit to execu
 tf.app.flags.DEFINE_string('filename', './Data/photo3.jpg', 'File (Image) or File list (Text/No header TSV) to process')
 
 FLAGS = tf.app.flags.FLAGS
-
-class Person(object):
-
-    gender_list = GENDER_LIST
-    age_list = AGE_LIST
-
-    def __init__(self, gender=0, age=0, second_best_age=0, ratio=0):
-        self.gender_index = gender
-        self.age_index = age
-        self.gender = self.gender_list[self.gender_index]
-        self.age = self.age_list[self.age_index]
-        self.second_best_age_index = second_best_age
-        self.second_best_age = self.age_list[self.second_best_age_index]
-        self.ratio = ratio
 
 class ImageCoder(object):
     """Reference from rude-carnie"""
@@ -281,10 +268,10 @@ def main(argv=None):
                 best = classify_one_multi_crop(sess, label_list, softmax_output, images, imagefile, coder)      
                 gender_predictions.append(best)  
 
-    for (age_prediction, age_second_prediction, gender_prediction, ratio) in zip(age_predictions, age_second_predictions, gender_predictions, ratios):
-        person = Person(gender_prediction, age_prediction, age_second_prediction, ratio)
-        people.append(person)
+    data = People(age_predictions, age_second_predictions, gender_predictions, ratios)
+    question_posing = QuestionPosing('./Question Template/people.csv', data)
 
+    print(question_posing.ask())
 
 if __name__ == '__main__':
     tf.compat.v1.app.run()
