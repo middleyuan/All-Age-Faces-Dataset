@@ -1,0 +1,13 @@
+#!/bin/sh
+echo "Running $0 file"
+
+echo "Creating output directory"
+[ ! -d "output" ] && mkdir "output"
+
+for f in ./Data/*
+do 
+ echo "Feeding $f into predict.py"
+ python predict.py --filename $f
+done
+
+echo "Prediction is finished"
