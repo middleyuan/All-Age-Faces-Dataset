@@ -1,7 +1,7 @@
 # Goal
 To develop a robotic system that can generate engaging questions about digital photos to trigger reminiscence.
 
-# Motivation behind training the model on All-Age-Faces Dataset?)
+# Motivation behind training the model on All-Age-Faces Dataset
 Nowadays, I find few age and gender prediction models are trained on Asian dataset.
 It will cause a drop of accuracy when the targets we went to predict are Asian people.
 So, I would try to train a model based on dataset containing mostly Asian.
