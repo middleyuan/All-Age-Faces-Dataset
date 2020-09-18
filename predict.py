@@ -5,18 +5,19 @@ from tensorflow.contrib.layers import *
 import os
 import itertools
 from question import Person, People, QuestionPosing
-
+import csv
 
 RESIZE_FINAL = 227
 RESIZE_AOI = 256
 GENDER_LIST =['F','M']
-AGE_LIST = ['[0, 3]','[4, 7]','[8, 14]','[15, 24]','[25, 37]','[38, 47]','[48, 59]','[60, 100]']
+# AGE_LIST = ['[0, 3]','[4, 7]','[8, 14]','[15, 24]','[25, 37]','[38, 47]','[48, 59]','[60, 100]']
+AGE_LIST = ['[0, 28]','[29, 54]','[55, 80]']
 MAX_BATCH_SIZE = 128
 
 tf.app.flags.DEFINE_string('gender_model_dir', './0.914_gender_checkpoint', 'Model directory (where checkpoint data lives)')
-tf.app.flags.DEFINE_string('age_model_dir', './0.534_age_checkpoint', 'Model directory (where checkpoint data lives)')
+tf.app.flags.DEFINE_string('age_model_dir', './0.726_age_checkpoint', 'Model directory (where checkpoint data lives)')
 tf.app.flags.DEFINE_string('device_id', '/cpu:0', 'What processing unit to execute inference on')
-tf.app.flags.DEFINE_string('filename', './Data/photo3.jpg', 'File (Image) or File list (Text/No header TSV) to process')
+tf.app.flags.DEFINE_string('filename', '', 'File (Image) to process')
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -194,84 +195,132 @@ def classify_one_multi_crop(sess, label_list, softmax_output, images, image_file
     
         nlabels = len(label_list)
         if nlabels > 2:
+            tmp = output[best]
             output[best] = 0
             second_best = np.argmax(output)
             print('Guess @ 2 %s, prob = %.2f' % (label_list[second_best], output[second_best]))
 
-            return best, second_best
+            return best, tmp, second_best, output[second_best]
 
-        return best
+        return best, output[best], not best, 1.0
     except Exception as e:
         print(e)
         print('Failed to run image %s ' % image_file)
 
 def main(argv=None):
+
     print('Using dlib face detector...')
     detector = FaceDetectorDlib('./shape_predictor_68_face_landmarks.dat')
-    face_files, outfile = detector.run(FLAGS.filename)
+    face_files, outfile = detector.run(FLAGS.filename)  
 
-    config = tf.compat.v1.ConfigProto(allow_soft_placement=True)
-    coder = ImageCoder()
-    age_predictions, age_second_predictions = [], []
-    gender_predictions = []
-    ratios = detector.ratios
-    people = []
+    if len(face_files) != 0:
 
-    # age prediction
-    age_graph = tf.Graph()
-    with tf.compat.v1.Session(config=config, graph=age_graph) as sess:
+        faces_locations = detector.locations
+        name_list = FLAGS.filename.split('/')
+        name_list = name_list[len(name_list) - 1].split('.')
+        basename = name_list[len(name_list) - 2]
+        output = [basename]
+        column = ['filename']
 
-        with tf.device(FLAGS.device_id):
-            
-            label_list = AGE_LIST
-            nlabels = len(label_list)
+        config = tf.compat.v1.ConfigProto(allow_soft_placement=True)
+        coder = ImageCoder()
+        age_predictions, age_second_predictions = [], []
+        age_top1_probs, age_top2_probs = [], []
+        gender_predictions = []
+        gender_top1_probs = []
+        ratios = detector.ratios
+        people = []
 
-            images = tf.compat.v1.placeholder(tf.float32, [None, RESIZE_FINAL, RESIZE_FINAL, 3])
-            logits = levi_hassner_bn(nlabels, images, 1, False)
-            init = tf.compat.v1.global_variables_initializer()
+        # age prediction
+        age_graph = tf.Graph()
+        with tf.compat.v1.Session(config=config, graph=age_graph) as sess:
 
-            model_checkpoint_path, _ = get_checkpoint(FLAGS.age_model_dir, None, 'checkpoint')
+            with tf.device(FLAGS.device_id):
+                
+                label_list = AGE_LIST
+                nlabels = len(label_list)
 
-            saver = tf.compat.v1.train.Saver()
-            saver.restore(sess, model_checkpoint_path)
+                images = tf.compat.v1.placeholder(tf.float32, [None, RESIZE_FINAL, RESIZE_FINAL, 3])
+                logits = levi_hassner_bn(nlabels, images, 1, False)
+                init = tf.compat.v1.global_variables_initializer()
 
-            softmax_output = tf.nn.softmax(logits)
+                model_checkpoint_path, _ = get_checkpoint(FLAGS.age_model_dir, None, 'checkpoint')
 
-            image_files = list(filter(lambda x: x is not None, [find_files(f) for f in face_files]))
+                saver = tf.compat.v1.train.Saver()
+                saver.restore(sess, model_checkpoint_path)
 
-            for imagefile in image_files:
-                best, second = classify_one_multi_crop(sess, label_list, softmax_output, images, imagefile, coder)  
-                age_predictions.append(best)
-                age_second_predictions.append(second)
+                softmax_output = tf.nn.softmax(logits)
 
-    # gender prediction
-    gender_graph = tf.Graph()
-    with tf.compat.v1.Session(config=config, graph=gender_graph) as sess:
+                image_files = list(filter(lambda x: x is not None, [find_files(f) for f in face_files]))
 
-        with tf.device(FLAGS.device_id):
+                for imagefile in image_files:
+                    best, best_prob, second, second_prob = classify_one_multi_crop(sess, label_list, softmax_output, images, imagefile, coder)  
+                    age_predictions.append(best)
+                    age_top1_probs.append(best_prob)
+                    age_second_predictions.append(second)
+                    age_top2_probs.append(second_prob)
 
-            label_list = GENDER_LIST
-            nlabels = len(label_list)
+        # gender prediction
+        gender_graph = tf.Graph()
+        with tf.compat.v1.Session(config=config, graph=gender_graph) as sess:
 
-            images = tf.compat.v1.placeholder(tf.float32, [None, RESIZE_FINAL, RESIZE_FINAL, 3])
-            logits = levi_hassner_bn(nlabels, images, 1, False)
-            init = tf.compat.v1.global_variables_initializer()
+            with tf.device(FLAGS.device_id):
 
-            model_checkpoint_path, _ = get_checkpoint(FLAGS.gender_model_dir, None, 'checkpoint')
+                label_list = GENDER_LIST
+                nlabels = len(label_list)
 
-            saver = tf.compat.v1.train.Saver()
-            saver.restore(sess, model_checkpoint_path)
+                images = tf.compat.v1.placeholder(tf.float32, [None, RESIZE_FINAL, RESIZE_FINAL, 3])
+                logits = levi_hassner_bn(nlabels, images, 1, False)
+                init = tf.compat.v1.global_variables_initializer()
 
-            softmax_output = tf.nn.softmax(logits)
+                model_checkpoint_path, _ = get_checkpoint(FLAGS.gender_model_dir, None, 'checkpoint')
 
-            for imagefile in image_files:
-                best = classify_one_multi_crop(sess, label_list, softmax_output, images, imagefile, coder)      
-                gender_predictions.append(best)  
+                saver = tf.compat.v1.train.Saver()
+                saver.restore(sess, model_checkpoint_path)
 
-    data = People(age_predictions, age_second_predictions, gender_predictions, ratios)
-    question_posing = QuestionPosing('./Question Template/people.csv', data)
+                softmax_output = tf.nn.softmax(logits)
 
-    print(question_posing.ask())
+                for imagefile in image_files:
+                    best, best_prob, second_best, second_prob = classify_one_multi_crop(sess, label_list, softmax_output, images, imagefile, coder)      
+                    gender_predictions.append(best)  
+                    gender_top1_probs.append(best_prob)
+
+        data = People(age_predictions, age_top1_probs, age_second_predictions, age_top2_probs, gender_predictions, gender_top1_probs, ratios, faces_locations)
+        question_posing = QuestionPosing('./Question Template/people.csv', data)
+        print(question_posing.ask())
+        output += [question_posing.question_type[question_posing.type]]
+        column += ['relation']
+
+        count = 0
+        for (age_prediction, gender_prediction, ratio, location) in zip(age_predictions, gender_predictions, ratios, faces_locations):    
+            output += [age_prediction]
+            output += [gender_prediction]
+            output += [ratio]
+            output += [location]
+            count += 1
+            column += ['age_prediction']
+            column += ['gender_prediction']
+            column += ['ratio']
+            column += ['location']
+            if count == 5:
+                break
+        if count < 5:
+            for i in range(count, 5):
+                output += [-1]
+                output += [-1]
+                output += [-1]
+                output += [-1]
+                column += ['age_prediction']
+                column += ['gender_prediction']
+                column += ['ratio']
+                column += ['location']
+
+        with open('./output/%s.csv' % basename, 'w', newline='') as csvfile:
+
+            writer = csv.writer(csvfile)
+
+            writer.writerow(column)
+            writer.writerow(output)
 
 if __name__ == '__main__':
     tf.compat.v1.app.run()
