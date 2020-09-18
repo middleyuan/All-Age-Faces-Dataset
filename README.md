@@ -24,18 +24,18 @@ You can check the TFRecord of age and TFRecord of gender in age directory and ge
 ![image](https://github.com/middleyuan/All-Age-Faces-Dataset/blob/master/flow_chart.png)
 
 # Folder Description
-0.534_age_checkpoint:
+## 0.534_age_checkpoint:
 * 8 classes age prediction model with 0.534 accuraccy.
 * AGE_LIST = ['[0, 3]','[4, 7]','[8, 14]','[15, 24]','[25, 37]','[38, 47]','[48, 59]','[60, 100]']
-0.726_age_checkpoint:
+## 0.726_age_checkpoint:
 * 3 classes age prediction model with 0.726 accuraccy.
 * AGE_LIST = ['[0, 28]','[29, 54]','[55, 80]']
-0.914_gender_prediction_checkpoint:
+## 0.914_gender_prediction_checkpoint:
 * 2 classes gender prediction model with 0.914 accuraccy.
 * GENDER_LIST =['F','M']
-Data:
+## Data:
 * By default, this folder contains the image files that we want to process.
-output:
+## output:
 * By default, the python script will process an image file and output the .csv file and cropping faces of it.
 
 # Description
