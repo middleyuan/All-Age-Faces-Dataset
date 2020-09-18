@@ -1,10 +1,7 @@
 # Goal
-Robot-Assist Photo Reminiscence: 
-Try Computer Vision and Machine Learning techniques to extract features from photos.
-In our case, it's age and gender prediction.
-Afterwards, the question generation module will ask a specific questions lying in a certain category.
+To develop a robotic system that can generate engaging questions about digital photos to trigger reminiscence.
 
-# Motivation (Why train the model on All-Age-Faces Dataset?)
+# Motivation behind training the model on All-Age-Faces Dataset?)
 Nowadays, I find few age and gender prediction models are trained on Asian dataset.
 It will cause a drop of accuracy when the targets we went to predict are Asian people.
 So, I would try to train a model based on dataset containing mostly Asian.
@@ -19,22 +16,57 @@ Finally, datapreproc.py process the both age and gender data set and save them a
 You can check the TFRecord of age and TFRecord of gender in age directory and gender directory repectively.
 
 # Accuracy
-|   Age Model   | Gender Model |
-| ------------- | -------------|
-|     0.534     |    0.914     |
+| Age Model with 3 classes | Age Model with 8 classes | Gender Model |
+|--------------------------| ------------------------ | -------------|
+|           0.724          |            0.534         |    0.914     |
 
 # Program Flow Chart
 ![image](https://github.com/middleyuan/All-Age-Faces-Dataset/blob/master/flow_chart.png)
 
-# Usage 
-Predict.py file will first detect the number of faces in the picture and predict each face's age and gender, and then ask a question based on the information it extracts from the photo.
+# Folder Description
+0.534_age_checkpoint:
+* 8 classes age prediction model with 0.534 accuraccy.
+* AGE_LIST = ['[0, 3]','[4, 7]','[8, 14]','[15, 24]','[25, 37]','[38, 47]','[48, 59]','[60, 100]']
+0.726_age_checkpoint:
+* 3 classes age prediction model with 0.726 accuraccy.
+* AGE_LIST = ['[0, 28]','[29, 54]','[55, 80]']
+0.914_gender_prediction_checkpoint:
+* 2 classes gender prediction model with 0.914 accuraccy.
+* GENDER_LIST =['F','M']
+Data:
+* By default, this folder contains the image files that we want to process.
+output:
+* By default, the python script will process an image file and output the .csv file and cropping faces of it.
 
-Feed the photo into predict.py through argument "filename".
+# Description
+Given a photo, the program can support face detection, and it will output each person's:
+
+* face location compared with the entire photo. (The number is normalized, so it lies in [0, 1])
+* face area ratio compared with the entire photo.
+* age and gender prediction. 
+* relation.
+
+Afterwards, it will generate engaging question based on the information retrieved from the photo.
+
+# Usage 
+
+## For processing a single image file 
+Pass the filename and python script will output the result to "output" folder.
 ```
-$ python predict.py  --filename "./Data/photo2.jpg"
+python predict.py --filename ./Data/photo1.jpg
 ```
 
 Sample output: 
 ```
 你覺得他對你做過最浪漫的事情是什麽呢？
+```
+
+## For processing all the image files in a folder
+Run the bash script and it will process all the files in "Data" folder and output result in "output" folder.
+```
+./run
+```
+or 
+```
+sh run
 ```
